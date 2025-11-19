@@ -427,7 +427,7 @@ def backtest(df, initial_capital, fee_rate, tax_rate):
         '盈利因子': f"{(gross_profit / abs(gross_loss)) if gross_loss != 0 else np.inf:.3f}",
         '標準差': f"{(std)*100:.2f}%",
         '最大回撤': f"{(max_drawdown_ratio)*100:.2f}%",
-        '最大交易虧損': f"{max_trade_loss*1000:.3f}元",
+        #'最大交易虧損': f"{max_trade_loss*1000:.3f}元",
         '夏普比率': f"{(trade_returns.mean() / std * np.sqrt(252)) if std != 0 else 0:.3f}",
         '索提諾比率': f"{(trade_returns.mean() / downside_std * np.sqrt(252)) if downside_std != 0 else 0:.3f}",
         '平均持有天數': f"{trades_df['持有天數'].mean():.3f}天",
