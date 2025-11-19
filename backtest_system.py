@@ -561,21 +561,47 @@ except Exception as e:
     st.error(f"LLM Client 初始化時發生錯誤: {e}")
     client = None
 
-def llm_api_call(prompt_text):
-    
+def llm_api_call(prompt_text, model_list=None):
+    """
+    呼叫 LLM API，如果遇到 429 會自動換下一個模型
+    :param prompt_text: 要傳給模型的文字
+    :param model_list: 模型清單，依優先順序嘗試
+    :return: 模型回應文字或錯誤訊息
+    """
     if client is None:
         return "LLM 服務尚未啟用。請檢查 API Key 設定和函式庫安裝。"
 
-    try:
-        # 這是真正的 LLM API 呼叫 (使用 gemini-2.5-flash 模型)
-        response = client.models.generate_content(
-            model='gemini-2.5-flash', 
-            contents=prompt_text
-        )
-        return response.text
-        
-    except Exception as e:
-        return f"LLM 服務呼叫失敗。錯誤資訊：{e}"
+    if model_list is None:
+        model_list = ['gemini-2.5-pro', 
+                      'gemini-2.5-flash',
+                      'gemini-2.5-flash-preview-09-2025',
+                      'gemma-3-27b-it',
+                      'gemini-2.0-flash-001',
+                      'gemini-2.0-flash-lite-preview-02-05',
+                      'gemma-3-12b-it',
+                      'gemma-3n-e4b-it',
+                      'gemma-3-4b-it']
+
+    for model_name in model_list:
+        try:
+            response = client.models.generate_content(
+                model=model_name,
+                contents=prompt_text
+            )
+            # 在回答前加上模型名稱
+            return f"[模型: {model_name}] {response.text}"
+
+        except Exception as e:
+            error_str = str(e)
+            if "429" in error_str or "RESOURCE_EXHAUSTED" in error_str:
+                print(f"{model_name} 已達使用上限，嘗試下一個模型...")
+                continue
+            else:
+                return f"LLM 服務呼叫失敗。錯誤資訊：{e}"
+
+    return "所有模型均已達額度，請稍後再試或升級付費方案。"
+
+
 # ----------------- LLM Agent Configuration End -----------------
     
 import streamlit as st
