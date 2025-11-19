@@ -1293,7 +1293,7 @@ with tab_backtest:
                         # 假設 initial_capital 已定義
                         initial_balance = initial_capital 
                         daily_profit = perf_df.groupby('Date')['淨利'].sum().reset_index()
-                        daily_profit["累積淨利"] = daily_profit['淨利']/1000.cumsum()
+                        daily_profit["累積淨利"] = (daily_profit['淨利']/1000).cumsum()
                         daily_profit["累積報酬率(%)"] = (daily_profit["累積淨利"] / initial_balance) * 100
                         
                         fig_perf = go.Figure()
