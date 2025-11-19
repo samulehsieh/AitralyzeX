@@ -1263,8 +1263,11 @@ with tab_backtest:
                     # =====================================================
                     if current_label == "全部歷史":
                         subtitle_text = "📈 全部歷史的策略績效"
+                    elif current_label == "今年以來":
+                        subtitle_text = "📈 今年以來的策略績效"
                     else:
                         subtitle_text = f"📈 近{current_label}的策略績效"
+
                     
                     st.subheader(subtitle_text)
                     column_cfg = {
