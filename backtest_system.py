@@ -359,8 +359,8 @@ def backtest(df, initial_capital, fee_rate, tax_rate):
                     '出場日期': sell_date,
                     '出場價格': sell_price,
                     '報酬率': ret,
-                    #'手續費': fee,
-                    #'稅費': tax,
+                    '手續費': fee,
+                    '稅費': tax,
                     '淨利': profit*1000,
                     '持有天數': holding_days
                 })
@@ -1367,9 +1367,14 @@ with tab_backtest:
                     # =====================================================
                     st.markdown("---")
                     st.subheader("📋 交易明細")
+
+                    # 在呈現前，移除不想顯示的欄位
+                    hide_cols = ['手續費', '稅費']
+                    
+                    trades_display = trades_df.drop(columns=[c for c in hide_cols if c in trades_df.columns])
                     
                     if not trades_df.empty:
-                        st.dataframe(trades_df, use_container_width=True)
+                        st.dataframe(trades_display, use_container_width=True)
                     else:
                         st.info(f"⚠️ 期間 {current_label} 無交易資料。")
                         
