@@ -358,6 +358,7 @@ def backtest(df, initial_capital, fee_rate, tax_rate):
                     '進場價格': buy_price,
                     '出場日期': sell_date,
                     '出場價格': sell_price,
+                    '報酬率.': ret,
                     '報酬率': f"{ret * 100:.2f}%",
                     '手續費': fee,
                     '稅費': tax,
@@ -375,7 +376,7 @@ def backtest(df, initial_capital, fee_rate, tax_rate):
     trades_df = pd.DataFrame(trades)
     if not trades_df.empty:
         trades_df['進場日期'] = pd.to_datetime(trades_df['進場日期']).dt.normalize()
-    trade_returns = trades_df['報酬率'].values
+    trade_returns = trades_df['報酬率.'].values
     trade_profits = trades_df['淨利'].values
     fees = trades_df['手續費'].values
     taxes = trades_df['稅費'].values
@@ -1369,7 +1370,7 @@ with tab_backtest:
                     st.subheader("📋 交易明細")
 
                     # 在呈現前，移除不想顯示的欄位
-                    hide_cols = ['手續費', '稅費', '股票代碼' ,'策略名稱']
+                    hide_cols = ['手續費', '稅費', '報酬率.', '股票代碼', '策略名稱']
                     
                     trades_display = trades_df.drop(columns=[c for c in hide_cols if c in trades_df.columns])
                     
