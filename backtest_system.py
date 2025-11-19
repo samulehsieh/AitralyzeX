@@ -561,45 +561,65 @@ except Exception as e:
     st.error(f"LLM Client 初始化時發生錯誤: {e}")
     client = None
 
-def llm_api_call(prompt_text, model_list=None):
+import time
+
+def llm_api_call(prompt_text, model_list=None, wait_seconds=30):
     """
-    呼叫 LLM API，如果遇到 429 會自動換下一個模型
+    呼叫 LLM API，多模型輪替，如果所有模型都用完再等待重試
     :param prompt_text: 要傳給模型的文字
     :param model_list: 模型清單，依優先順序嘗試
+    :param wait_seconds: 所有模型都用完時等待秒數再重試
     :return: 模型回應文字或錯誤訊息
     """
     if client is None:
         return "LLM 服務尚未啟用。請檢查 API Key 設定和函式庫安裝。"
 
     if model_list is None:
-        model_list = ['gemini-2.5-pro', 
-                      'gemini-2.5-flash',
-                      'gemini-2.5-flash-preview-09-2025',
-                      'gemma-3-27b-it',
-                      'gemini-2.0-flash-001',
-                      'gemini-2.0-flash-lite-preview-02-05',
-                      'gemma-3-12b-it',
-                      'gemma-3n-e4b-it',
-                      'gemma-3-4b-it']
+        model_list = [
+            'gemini-2.5-pro', 
+            'gemini-2.5-flash',
+            'gemini-2.5-flash-preview-09-2025',
+            'gemma-3-27b-it',
+            'gemini-2.0-flash-001',
+            'gemini-2.0-flash-lite-preview-02-05',
+            'gemma-3-12b-it',
+            'gemma-3n-e4b-it',
+            'gemma-3-4b-it'
+        ]
 
-    for model_name in model_list:
-        try:
-            response = client.models.generate_content(
-                model=model_name,
-                contents=prompt_text
-            )
-            # 在回答前加上模型名稱
-            return f"[模型: {model_name}] {response.text}"
+    while True:  # 持續嘗試直到成功
+        all_models_exhausted = True
 
-        except Exception as e:
-            error_str = str(e)
-            if "429" in error_str or "RESOURCE_EXHAUSTED" in error_str:
-                print(f"{model_name} 已達使用上限，嘗試下一個模型...")
-                continue
-            else:
-                return f"LLM 服務呼叫失敗。錯誤資訊：{e}"
+        for model_name in model_list:
+            try:
+                response = client.models.generate_content(
+                    model=model_name,
+                    contents=prompt_text
+                )
+                # 成功就回傳，標註模型
+                return f"[模型: {model_name}] {response.text}"
 
-    return "所有模型均已達額度，請稍後再試或升級付費方案。"
+            except Exception as e:
+                error_str = str(e)
+                # quota 超過，直接換下一個模型
+                if "429" in error_str or "RESOURCE_EXHAUSTED" in error_str:
+                    print(f"{model_name} 已達使用上限，嘗試下一個模型...")
+                    continue
+                # 服務暫時不可用，可短暫等待後重試同一模型
+                elif "503" in error_str or "500" in error_str:
+                    print(f"{model_name} 伺服器暫時不可用，稍後重試...")
+                    time.sleep(3)
+                    continue
+                else:
+                    return f"LLM 服務呼叫失敗。錯誤資訊：{e}"
+
+            all_models_exhausted = False  # 如果有模型成功過就不算全部用完
+
+        # 如果所有模型都用完才等待
+        if all_models_exhausted:
+            print(f"所有模型均已達額度，等待 {wait_seconds} 秒再重試...")
+            time.sleep(wait_seconds)
+
 
 
 # ----------------- LLM Agent Configuration End -----------------
