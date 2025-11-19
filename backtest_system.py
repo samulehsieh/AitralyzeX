@@ -569,7 +569,7 @@ def llm_api_call(prompt_text):
     try:
         # 這是真正的 LLM API 呼叫 (使用 gemini-2.5-flash 模型)
         response = client.models.generate_content(
-            model='gemini-3-pro', 
+            model='gemini-2.5-pro', 
             contents=prompt_text
         )
         return response.text
