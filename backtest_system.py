@@ -576,7 +576,7 @@ def llm_api_call(prompt_text, model_list=None, wait_seconds=30):
 
     if model_list is None:
         model_list = [
-            'gemini-2.5-pro', 
+            #'gemini-2.5-pro', 
             'gemini-2.5-flash',
             'gemini-2.5-flash-preview-09-2025',
             'gemma-3-27b-it',
