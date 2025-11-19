@@ -413,7 +413,7 @@ def backtest(df, initial_capital, fee_rate, tax_rate):
         '最終權益': f"{capital * 1000:.3f}元",
         '總報酬率': f"{((capital / initial_capital) -1)*100:.2f}%",
         '買入持有報酬率': f"{(buy_and_hold_return)*100:.2f}%",
-        '策略相對買入持有超額報酬': f"{(((capital - initial_capital) - (df['Close'].iloc[-1] + df['Dividends'].sum() - df['Open'].iloc[0])) / df['Open'].iloc[0])*100:.2f}%",
+        '策略相對買入持有超額報酬': f"{(((capital / initial_capital) -1)-buy_and_hold_return)*100:.2f}%",
         '總交易次數': f"{len(trades)}次",
         '總手續費成本': f"{fees.sum():.3f}元",
         '總證交稅成本': f"{taxes.sum():.3f}元",
@@ -431,7 +431,6 @@ def backtest(df, initial_capital, fee_rate, tax_rate):
         '夏普比率': f"{(trade_returns.mean() / std * np.sqrt(252)) if std != 0 else 0:.3f}",
         '索提諾比率': f"{(trade_returns.mean() / downside_std * np.sqrt(252)) if downside_std != 0 else 0:.3f}",
         '平均持有天數': f"{trades_df['持有天數'].mean():.3f}天",
-        '預期報酬率': f"{(trade_returns.mean() if len(trade_returns) > 0 else 0)*100:.2f}%",
         '今天的訊號': today_signal
     }
 
