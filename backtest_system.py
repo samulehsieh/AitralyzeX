@@ -561,10 +561,6 @@ except Exception as e:
     st.error(f"LLM Client 初始化時發生錯誤: {e}")
     client = None
 
-import time
-
-import time
-
 def llm_api_call(prompt_text, model_list=None):
     """
     呼叫 LLM API，自動換模型。
