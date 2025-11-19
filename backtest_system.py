@@ -563,10 +563,13 @@ except Exception as e:
 
 import time
 
+import time
+
 def llm_api_call(prompt_text, model_list=None):
     """
-    呼叫 LLM API，如果遇到 429 會自動換下一個模型。
-    會區分 PerMinute、PerDay、Token 限流，並在回答前標註模型名稱。
+    呼叫 LLM API，自動換模型。
+    - 遇到 429（PerMinute/PerDay/Token）或 503（Service Unavailable）會直接跳下一個模型
+    - 回答前會標註使用的模型名稱
     """
     if client is None:
         return "LLM 服務尚未啟用。請檢查 API Key 設定和函式庫安裝。"
@@ -583,26 +586,26 @@ def llm_api_call(prompt_text, model_list=None):
             'gemma-3-4b-it'
         ]
 
-    tried_models = set()  # 記錄已經嘗試過的模型
+    tried_models = set()  # 已嘗試且達限額的模型
 
     while True:
         for model_name in model_list:
             if model_name in tried_models:
-                continue  # 已經用過且達限額的模型跳過
+                continue  # 跳過已達限額的模型
 
             try:
                 response = client.models.generate_content(
                     model=model_name,
                     contents=prompt_text
                 )
-                # 成功取得回答，標註模型名稱返回
+                # 成功取得回答
                 return f"[模型: {model_name}] {response.text}"
 
             except Exception as e:
                 error_str = str(e)
 
+                # 429 / RESOURCE_EXHAUSTED
                 if "429" in error_str or "RESOURCE_EXHAUSTED" in error_str:
-                    # 判斷是哪種限流
                     if "PerMinute" in error_str:
                         print(f"{model_name} 每分鐘限流，直接跳下一個模型...")
                         tried_models.add(model_name)
@@ -616,19 +619,26 @@ def llm_api_call(prompt_text, model_list=None):
                         tried_models.add(model_name)
                         continue
                     else:
-                        # 其他 429 / RESOURCE_EXHAUSTED，先跳過
-                        print(f"{model_name} 達到未知限制，跳下一個模型...")
+                        print(f"{model_name} 達到未知 429 限制，跳下一個模型...")
                         tried_models.add(model_name)
                         continue
+
+                # 503 Service Unavailable
+                elif "503" in error_str or "ServiceUnavailable" in error_str:
+                    print(f"{model_name} 服務暫時不可用，跳下一個模型...")
+                    tried_models.add(model_name)
+                    continue
+
                 else:
-                    # 非 429 錯誤直接回報
+                    # 其他錯誤直接回報
                     return f"LLM 服務呼叫失敗。錯誤資訊：{e}"
 
-        # 迴圈跑完所有模型，表示所有模型都達限額
+        # 如果所有模型都達限額或不可用
         if len(tried_models) == len(model_list):
-            print("所有模型均已達限額，稍後再試...")
-            tried_models.clear()  # 清空已嘗試模型，等待下一輪
-            time.sleep(5)  # 暫停幾秒再重試（可調整）
+            print("所有模型均達限額或不可用，稍後再試...")
+            tried_models.clear()  # 清空已嘗試列表
+            time.sleep(5)  # 可調整等待秒數
+
 # ----------------- LLM Agent Configuration End -----------------
     
 import streamlit as st
