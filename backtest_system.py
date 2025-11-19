@@ -579,7 +579,7 @@ def llm_api_call(prompt_text, model_list=None, wait_seconds=30):
             #'gemini-2.5-pro', 
             'gemini-2.5-flash',
             'gemini-2.5-flash-preview-09-2025',
-            'gemma-3-27b-it',
+            #'gemma-3-27b-it',
             'gemini-2.0-flash-001',
             'gemini-2.0-flash-lite-preview-02-05',
             'gemma-3-12b-it',
