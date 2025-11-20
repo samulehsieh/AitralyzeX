@@ -791,11 +791,11 @@ with tab_signal:
                 for ticker, hist in hist_data.items():
                     for strategy_name, strategy_func in filtered_strategies:
                         if st.session_state.signal_stop_requested:
-                            st.warning("⏹ 已手動停止回測")
+                            st.warning("⏹ 已手動停止查詢")
                             st.session_state.signal_is_running = False
                             break
     
-                        status_text.text(f"正在回測 {ticker} - {strategy_name} ({task_count+1}/{total_tasks})")
+                        status_text.text(f"正在查詢 {ticker} - {strategy_name} ({task_count+1}/{total_tasks})")
     
                         try:
                             # 確保策略函數可用
@@ -837,7 +837,7 @@ with tab_signal:
                 # 回測完成，顯示結果並讓按鈕恢復為「開始回測」
                 if not st.session_state.signal_stop_requested:
                     st.session_state.signal_is_running = False
-                    st.success("✅ 回測完成！")
+                    st.success("✅ 查詢完成！")
                     st.session_state.signal_df_results = pd.DataFrame(results)  # 保存結果至 session_state
                     st.rerun()  # 重新渲染頁面，更新按鈕狀態
     
@@ -857,7 +857,7 @@ with tab_signal:
         
         hist_data = st.session_state.get("hist_data", None)
         if hist_data is None:
-            st.warning("⚠️ 尚未載入歷史資料，請先執行回測。")
+            st.warning("⚠️ 尚未載入歷史資料，請先開始查詢。")
             st.stop()
         
         if not hist_data or not isinstance(hist_data, dict) or len(hist_data) == 0:
@@ -875,7 +875,7 @@ with tab_signal:
             # 將篩選結果合併成一個 DataFrame
             filtered_df = pd.concat(filtered_results, ignore_index=True) if filtered_results else pd.DataFrame()
             if filtered_df.empty:
-                st.info("❗ 沒有符合條件的策略回測結果。")
+                st.info("❗ 沒有符合條件的策略結果。")
             else:
                 # 1. 應用股票名稱轉換 (使用您剛才的邏輯)
                 #    確保 stock_dict 在此處可用
