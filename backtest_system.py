@@ -1320,8 +1320,8 @@ with tab_backtest:
                     # =====================================================
                     # 🚨 績效摘要顯示 (恢復到正確位置) 🚨
                     # =====================================================
-                    if current_label == "全部歷史":
-                        subtitle_text = "📈 全部歷史的策略績效"
+                    if current_label == "全部資料":
+                        subtitle_text = "📈 全部資料的策略績效"
                     elif current_label == "今年以來":
                         subtitle_text = "📈 今年以來的策略績效"
                     else:
