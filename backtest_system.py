@@ -795,7 +795,7 @@ with tab_signal:
                             st.session_state.signal_is_running = False
                             break
     
-                        status_text.text(f"正在查詢 {ticker} - {strategy_name} ({task_count+1}/{total_tasks})")
+                        status_text.text(f"正在查詢 {ticker} - {strategy_name} ({task_count+1}/{total_tasks})" )
     
                         try:
                             # 確保策略函數可用
