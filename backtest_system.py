@@ -595,7 +595,9 @@ def llm_api_call(prompt_text, model_list=None):
                     contents=prompt_text
                 )
                 # 成功取得回答
-                return f"[模型: {model_name}] {response.text}"
+                #return f"[模型: {model_name}] {response.text}"
+                return response.text
+
 
             except Exception as e:
                 error_str = str(e)
