@@ -6,3 +6,4 @@ streamlit
 plotly
 google-genai
 tabulate
+openai
