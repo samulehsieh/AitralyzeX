@@ -636,12 +636,12 @@ def llm_api_call(prompt_text, model_list=None):
                     if openai_client is None:
                         tried_models.add(model_name)
                         continue
-                    response = openai_client.chat.completions.create(
+                
+                    response = openai_client.responses.create(
                         model=model_name,
-                        messages=[{"role": "user", "content": prompt_text}]
+                        input=prompt_text
                     )
-                    return f"[模型: {model_name}] {response.choices[0].message.content}"
-
+                    return f"[模型: {model_name}] {response.output_text}"
 
                 else:
                     print(f"未知模型: {model_name}, 跳過...")
