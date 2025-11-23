@@ -623,7 +623,7 @@ def llm_api_call(prompt_text, model_list=None):
             try:
                 # 判斷模型來源，使用對應 client
                 if model_name.startswith(GEMINI_PREFIXES):
-                    response = client.models.generate_content(
+                    response = gemini_client.models.generate_content(
                         model=model_name,
                         contents=prompt_text
                     )
