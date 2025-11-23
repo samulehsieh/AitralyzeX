@@ -587,8 +587,8 @@ def llm_api_call(prompt_text, model_list=None):
     - 遇到 429（PerMinute/PerDay/Token）或 503（Service Unavailable）會直接跳下一個模型
     - 回答前會標註使用的模型名稱
     """
-    if client is None and 'openai_client' not in globals():
-        return "LLM 服務尚未啟用。請檢查 API Key 設定和函式庫安裝。"
+    if gemini_client is None and openai_client is None:
+        return "LLM 服務尚未啟用：請確認 Streamlit secrets 是否設定 API Key，並安裝相關 SDK"
 
     if model_list is None:
         model_list = [
