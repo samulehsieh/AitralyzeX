@@ -559,26 +559,7 @@ except Exception as e:
     st.warning(f"Gemini Client 初始化錯誤: {e}")
     gemini_client = None
 
-# ----------------- OpenAI Client Configuration -----------------
-try:
-    from openai import OpenAI
-    
-    if "openai_api_key" in st.secrets:
-        openai_client = OpenAI(api_key=st.secrets["openai_api_key"])
-    else:
-        st.warning("OpenAI 服務未啟用：請在 Streamlit 的 secrets 中設定 openai_api_key。")
-        openai_client = None
-
-except ImportError:
-    st.warning("OpenAI SDK 未安裝 (pip install openai)")
-    openai_client = None
-except Exception as e:
-    st.warning(f"OpenAI Client 初始化錯誤: {e}")
-    openai_client = None
-
-
 GEMINI_PREFIXES = ("gemini", "gemma")
-OPENAI_PREFIXES = ("gpt", "o3", "o1", "o4")
 
 def llm_api_call(prompt_text, model_list=None):
     """
@@ -587,30 +568,18 @@ def llm_api_call(prompt_text, model_list=None):
     - 遇到 429（PerMinute/PerDay/Token）或 503（Service Unavailable）會直接跳下一個模型
     - 回答前會標註使用的模型名稱
     """
-    if gemini_client is None and openai_client is None:
+    if gemini_client is None :
         return "LLM 服務尚未啟用：請確認 Streamlit secrets 是否設定 API Key，並安裝相關 SDK"
 
     if model_list is None:
         model_list = [
-            'o3-2025-04-16',
-            'gpt-4.1-2025-04-14',
-            #'gemini-2.5-flash',
-            #'gemini-2.5-flash-preview-09-2025',
-            'o1-2024-12-17',
-            'o4-mini-2025-04-16',
-            'gpt-4.1-mini-2025-04-14',
-            #'gemini-2.0-flash-001',
-            #'gemini-2.0-flash-lite-preview-02-05',
-            'o3-mini',
-            'gpt-4o-2024-05-13',
-            #'gemma-3-12b-it',
-            'gpt-4o-2024-08-06',
-            'gpt-4.1-nano-2025-04-14',
-            #'gemma-3n-e4b-it',
-            'gpt-4o-mini-2024-07-18',
-            #'gemma-3-4b-it',
-            'gpt-3.5-turbo-0125',
-            'gpt-3.5-turbo-1106',
+            'gemini-2.5-flash',
+            'gemini-2.5-flash-preview-09-2025',
+            'gemini-2.0-flash-001',
+            'gemini-2.0-flash-lite-preview-02-05',
+            'gemma-3-12b-it',
+            'gemma-3n-e4b-it',
+            'gemma-3-4b-it',
         ]
 
     tried_models = set()  # 已嘗試且達限額的模型
@@ -631,17 +600,6 @@ def llm_api_call(prompt_text, model_list=None):
                         contents=prompt_text
                     )
                     return f"[模型: {model_name}] {response.text}"
-                
-                elif model_name.startswith(OPENAI_PREFIXES):
-                    if openai_client is None:
-                        tried_models.add(model_name)
-                        continue
-                
-                    response = openai_client.responses.create(
-                        model=model_name,
-                        input=prompt_text
-                    )
-                    return f"[模型: {model_name}] {response.output_text}"
 
                 else:
                     print(f"未知模型: {model_name}, 跳過...")
