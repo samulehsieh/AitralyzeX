@@ -677,7 +677,7 @@ with tab_signal:
                 st.session_state[key] = False
 
     # --- 讀取股票池 CSV ---
-    url = "https://raw.githubusercontent.com/samulehsieh/-/refs/heads/main/%E8%82%A1%E7%A5%A8%E6%B1%A0.csv"
+    url = "https://raw.githubusercontent.com/samulehsieh/stock-pool/refs/heads/main/%E8%82%A1%E7%A5%A8%E6%B1%A0.csv"
     df = pd.read_csv(url, dtype=str, encoding='utf-8-sig')
     stock_dict = dict(zip(df['代號'], df['名稱']))
     options = [f"{code} {name}" for code, name in stock_dict.items()]
