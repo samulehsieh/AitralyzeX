@@ -543,43 +543,74 @@ def format_ticker_to_name(ticker_code_tw, stock_dict):
 
 # ----------------- LLM Agent Configuration -----------------
 try:
-    # 確保您已安裝 Google Generative AI SDK: pip install google-genai
+    # Google Gemini Client
     from google import genai 
     
-    # 使用 Streamlit secrets 取得 API Key (慣用做法)
     if "gemini_api_key" in st.secrets:
-        # 這是真正的 Client 初始化，使用 st.secrets 取得的 API Key
-        client = genai.Client(api_key=st.secrets["gemini_api_key"])
+        gemini_client = genai.Client(api_key=st.secrets["gemini_api_key"])
     else:
-        st.error("LLM 服務未啟用：請在 Streamlit 的 secrets 中設定 gemini_api_key。")
-        client = None
+        st.warning("Gemini 服務未啟用：請在 Streamlit 的 secrets 中設定 gemini_api_key。")
+        gemini_client = None
 
 except ImportError:
-    st.error("LLM 服務未啟用：請安裝 Google Generative AI SDK (pip install google-genai)。")
-    client = None
+    st.warning("Google Generative AI SDK 未安裝 (pip install google-genai)")
+    gemini_client = None
 except Exception as e:
-    st.error(f"LLM Client 初始化時發生錯誤: {e}")
-    client = None
+    st.warning(f"Gemini Client 初始化錯誤: {e}")
+    gemini_client = None
+
+# ----------------- OpenAI Client Configuration -----------------
+try:
+    from openai import OpenAI
+    
+    if "openai_api_key" in st.secrets:
+        openai_client = OpenAI(api_key=st.secrets["openai_api_key"])
+    else:
+        st.warning("OpenAI 服務未啟用：請在 Streamlit 的 secrets 中設定 openai_api_key。")
+        openai_client = None
+
+except ImportError:
+    st.warning("OpenAI SDK 未安裝 (pip install openai)")
+    openai_client = None
+except Exception as e:
+    st.warning(f"OpenAI Client 初始化錯誤: {e}")
+    openai_client = None
+
+
+GEMINI_PREFIXES = ("gemini", "gemma")
+OPENAI_PREFIXES = ("gpt", "o3", "o1", "o4")
 
 def llm_api_call(prompt_text, model_list=None):
     """
     呼叫 LLM API，自動換模型。
+    - 支援 Google Gemini/Gemma 與 OpenAI GPT 系列
     - 遇到 429（PerMinute/PerDay/Token）或 503（Service Unavailable）會直接跳下一個模型
     - 回答前會標註使用的模型名稱
     """
-    if client is None:
+    if client is None and 'openai_client' not in globals():
         return "LLM 服務尚未啟用。請檢查 API Key 設定和函式庫安裝。"
 
     if model_list is None:
         model_list = [
-            'gemini-2.5-pro',
+            'o3-2025-04-16',
+            'gpt-4.1-2025-04-14',
             'gemini-2.5-flash',
             'gemini-2.5-flash-preview-09-2025',
+            'o1-2024-12-17',
+            'o4-mini-2025-04-16',
+            'gpt-4.1-mini-2025-04-14',
             'gemini-2.0-flash-001',
             'gemini-2.0-flash-lite-preview-02-05',
+            'o3-mini',
+            'gpt-4o-2024-05-13',
             'gemma-3-12b-it',
+            'gpt-4o-2024-08-06',
+            'gpt-4.1-nano-2025-04-14',
             'gemma-3n-e4b-it',
-            'gemma-3-4b-it'
+            'gpt-4o-mini-2024-07-18',
+            'gemma-3-4b-it',
+            'gpt-3.5-turbo-0125',
+            'gpt-3.5-turbo-1106',
         ]
 
     tried_models = set()  # 已嘗試且達限額的模型
@@ -590,38 +621,43 @@ def llm_api_call(prompt_text, model_list=None):
                 continue  # 跳過已達限額的模型
 
             try:
-                response = client.models.generate_content(
-                    model=model_name,
-                    contents=prompt_text
-                )
-                # 成功取得回答
-                #return f"[模型: {model_name}] {response.text}"
-                return response.text
+                # 判斷模型來源，使用對應 client
+                if model_name.startswith(GEMINI_PREFIXES):
+                    response = client.models.generate_content(
+                        model=model_name,
+                        contents=prompt_text
+                    )
+                    return f"[模型: {model_name}] {response.text}"
 
+                elif model_name.startswith(OPENAI_PREFIXES):
+                    response = openai_client.chat.completions.create(
+                        model=model_name,
+                        messages=[{"role": "user", "content": prompt_text}]
+                    )
+                    return f"[模型: {model_name}] {response.choices[0].message.content}"
+
+                else:
+                    print(f"未知模型: {model_name}, 跳過...")
+                    tried_models.add(model_name)
+                    continue
 
             except Exception as e:
                 error_str = str(e)
 
-                # 429 / RESOURCE_EXHAUSTED
+                # 處理 429 / RESOURCE_EXHAUSTED
                 if "429" in error_str or "RESOURCE_EXHAUSTED" in error_str:
                     if "PerMinute" in error_str:
-                        print(f"{model_name} 每分鐘限流，直接跳下一個模型...")
-                        tried_models.add(model_name)
-                        continue
+                        print(f"{model_name} 每分鐘限流，跳下一個模型...")
                     elif "PerDay" in error_str:
                         print(f"{model_name} 今日額度用完，換下一個模型...")
-                        tried_models.add(model_name)
-                        continue
                     elif "Token" in error_str:
                         print(f"{model_name} token 超過上限，換下一個模型...")
-                        tried_models.add(model_name)
-                        continue
                     else:
                         print(f"{model_name} 達到未知 429 限制，跳下一個模型...")
-                        tried_models.add(model_name)
-                        continue
+                    tried_models.add(model_name)
+                    continue
 
-                # 503 Service Unavailable
+                # 處理 503 Service Unavailable
                 elif "503" in error_str or "ServiceUnavailable" in error_str:
                     print(f"{model_name} 服務暫時不可用，跳下一個模型...")
                     tried_models.add(model_name)
@@ -634,7 +670,7 @@ def llm_api_call(prompt_text, model_list=None):
         # 如果所有模型都達限額或不可用
         if len(tried_models) == len(model_list):
             print("所有模型均達限額或不可用，稍後再試...")
-            tried_models.clear()  # 清空已嘗試列表
+            tried_models.clear()
             time.sleep(5)  # 可調整等待秒數
 
 # ----------------- LLM Agent Configuration End -----------------
