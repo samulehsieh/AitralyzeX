@@ -713,7 +713,7 @@ with tab_signal:
         "選擇策略",
         options=strategy_names,
         key=f"{page_prefix}_selected_strategies",
-        default=st.session_state[f"{page_prefix}_selected_strategies"],
+        #default=st.session_state[f"{page_prefix}_selected_strategies"],
         on_change=sync_select_all,
         args=(page_prefix, strategy_names),
         disabled=st.session_state.signal_is_running  # 🔹 查詢時凍結
