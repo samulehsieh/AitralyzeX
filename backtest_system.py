@@ -643,7 +643,7 @@ def llm_api_call(prompt_text, model_list=None):
 import streamlit as st
 
 # ----------------- Streamlit 介面 -----------------
-st.title("股票及時訊號與策略回測")
+st.title("股票即時訊號與策略回測")
 # ----------------- 分頁 -----------------
 tab_signal, tab_backtest = st.tabs(["訊號產出", "回測結果"])
 
