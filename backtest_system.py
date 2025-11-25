@@ -1156,31 +1156,52 @@ with tab_backtest:
     # ----------------- 參數調整 -----------------
     with subtab_params:
         st.subheader("策略參數調整")
+     
+        # 從 Session State 獲取當前選擇的策略名稱
+        selected_strategies_key = f"{page_prefix}_selected_strategies"
         
-        # 這裡假設了 `strategies`, `page_prefix`, `strategy_params` 
-        # 和 `st.session_state.backtest_params` 等變數在其他地方有定義
-        filtered_strategies = [
-            s for s in strategies
-            if s[0] in st.session_state[f"{page_prefix}_selected_strategies"]
-        ]
-        
-        if len(filtered_strategies) == 1:
-            selected_strategy_name, _ = filtered_strategies[0]
+        if st.session_state.get(selected_strategies_key) and len(st.session_state[selected_strategies_key]) == 1:
+            selected_strategy_name = st.session_state[selected_strategies_key][0]
             
-            if selected_strategy_name in strategy_params:
-                st.write(f"【{selected_strategy_name}】策略參數")
+            # 使用獨立的鍵值追蹤當前策略名稱
+            strategy_context_key = "backtest_current_strategy_name"
+            # 確保策略名稱鍵存在
+            if strategy_context_key not in st.session_state:
+                st.session_state[strategy_context_key] = None
+            
+            # 步驟 1: 檢查是否切換策略或首次加載，如果是則重新初始化 backtest_params
+            is_strategy_switched = st.session_state.get(strategy_context_key) != selected_strategy_name
+            
+            if is_strategy_switched or "backtest_params" not in st.session_state:
+                initial_params = strategy_params.get(selected_strategy_name, {})
+                st.session_state.backtest_params = initial_params.copy() 
+                st.session_state[strategy_context_key] = selected_strategy_name
+            
+            st.write(f"【{selected_strategy_name}】策略參數")
+            
+            # 步驟 2 & 3: 遍歷、顯示輸入框、並將新值寫回 Session State
+            new_params = {}
+            current_strategy_defaults = strategy_params.get(selected_strategy_name, {})
+            
+            for p, default_v in current_strategy_defaults.items():
                 
-                params = {}
-                for p, v in strategy_params[selected_strategy_name].items():
-                    # 確保 number_input 的 key 唯一
-                    unique_key = f"{selected_strategy_name}_{p}"
+                # 💡 核心：優先從 Session State 讀取調整值 (實現立即修正)
+                current_v = st.session_state.backtest_params.get(p, default_v)
+                unique_key = f"{selected_strategy_name}_{p}"
+                
+                # 創建輸入元件
+                if isinstance(default_v, int):
+                    new_v = st.number_input(p, value=int(current_v), key=unique_key, step=1)
+                elif isinstance(default_v, float):
+                    new_v = st.number_input(p, value=float(current_v), format="%.4f", key=unique_key)
+                else:
+                    new_v = st.text_input(p, value=str(current_v), key=unique_key)
                     
-                    if isinstance(v, int):
-                        params[p] = st.number_input(p, value=v, key=unique_key)
-                    elif isinstance(v, float):
-                        params[p] = st.number_input(p, value=v, format="%.4f", key=unique_key)
+                new_params[p] = new_v
                 
-                st.session_state.backtest_params = params
+            # 將最新的參數值回存到 Session State
+            st.session_state.backtest_params.update(new_params)
+            
         else:
             st.info("請選擇單一策略以調整參數")
         
